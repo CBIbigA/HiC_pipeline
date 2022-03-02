@@ -49,7 +49,7 @@ rule merge_and_rename_fastq:
 		getSRRFiles
 	params:
 		nogz = "RAW/{sample}"+".fastq"
-	benchmark: SAMPLEOUT+"/benchmarks/mergefastq/{sample}.benchmark.txt"
+	benchmark: OUTDIR+"/benchmarks/mergefastq/{sample}.benchmark.txt"
 	shell:
 		"zcat {input} > {params.nogz} && gzip {params.nogz}"
 
