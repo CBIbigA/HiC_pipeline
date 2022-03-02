@@ -1,0 +1,245 @@
+import math
+import pandas as pd
+OUTDIR="OUT/"
+INDIR="fastq/"
+INDEX_GENOME="/home/vadmin/genome/female.hg19"
+GENOME=INDEX_GENOME+"/female.hg19"
+THREADS=24
+HALF_THREADS=int(math.ceil(THREADS/2))
+
+R1 = "_R1"
+R2 = "_R2"
+
+wildcard_constraints:
+    dataset="R[12]"
+
+samples = pd.read_csv("SraRunTable.txt")
+samples["Samples"] =  samples.Condition +"_" +samples.Cell_Line
+samples = samples.set_index("Samples", drop=False).sort_index()
+samples = samples.to_dict()
+
+
+rule all:
+	input:
+		expand(OUTDIR+"matrix/{prefix}.{type}",prefix=samples["Run"].keys(),type=["mcool","hic"]),
+		expand(OUTDIR+"mapping/{prefix}_sorted.bai",prefix=samples["Run"].keys())
+
+
+rule get_fastq_pe_gz:
+    output:
+        # the wildcard name must be accession, pointing to an SRA number
+        "RAW/{accession}_1.fastq.gz",
+        "RAW/{accession}_2.fastq.gz",
+    log:
+        OUTDIR+"logs/pe/{accession}.gz.log"
+    params:
+        extra="--skip-technical"
+    threads: THREADS  # defaults to 6
+    wrapper:
+        "v1.2.0/bio/sra-tools/fasterq-dump"
+
+def getSRRFiles(wildcards):
+	return(["RAW/"+f+SAMPLEEXT for f in samples[wildcards.sample]])
+
+
+rule merge_and_rename_fastq:
+	output:
+		"RAW/{sample}.fastq.gz"
+	input:
+		getSRRFiles
+	params:
+		nogz = "RAW/{sample}"+".fastq"
+	benchmark: SAMPLEOUT+"/benchmarks/mergefastq/{sample}.benchmark.txt"
+	shell:
+		"zcat {input} > {params.nogz} && gzip {params.nogz}"
+
+rule makeChromSize:
+	input:
+		fasta=GENOME+".fa"
+	output:
+		chromsize=OUTDIR+"chrom.size",
+		fai=GENOME+".fa.fai"
+	benchmark:
+		OUTDIR+"benchmark/makeChromSize.txt"
+	conda: "../envs/pipeline.yaml"
+	shell:
+		"samtools faidx {input.fasta} -o {output.fai} && cut -f1,2 {output.fai} > {output.chromsize}"
+
+
+rule bwa_mem:
+	input:
+		fastq1=INDIR+"{prefix}"+R1+".fastq.gz",
+		fastq2=INDIR+"{prefix}"+R2+".fastq.gz"
+	output:
+		mapped=temp(OUTDIR+"mapping/{prefix}.sam")
+	params:
+		index=GENOME+".fa"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/bwa_mem.txt"
+	threads:THREADS
+	conda: "../envs/pipeline.yaml"
+	shell:
+		"bwa mem -5SPM -t {threads} {params.index} {input} > {output}"
+
+
+rule samtools_sam_to_bam:
+	input:
+		OUTDIR+"mapping/{prefix}.sam"
+	output:
+		temp(OUTDIR+"mapping/{prefix}.bam")
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/samtools_sam_to_bam.txt"
+	threads:THREADS
+	conda: "../envs/pipeline.yaml"
+	shell:
+		"samtools view -@ {threads} -Shb {input} > {output}"
+
+
+rule pairtools_parse:
+	input:
+		chromsize=OUTDIR+"chrom.size",
+		bam=OUTDIR+"mapping/{prefix}.bam"
+	output:
+		pairsam=temp(OUTDIR+"mapping/{prefix}.pairsam"),
+		stats=OUTDIR+"mapping/{prefix}.pairsamstats"
+	threads:THREADS
+	conda: "../envs/pipeline.yaml"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/pairtools_parse.txt"
+	shell:
+		"pairtools parse --min-mapq 40 --walks-policy all --max-inter-align-gap 30 --output-stats {output.stats} -c {input.chromsize} --add-columns mapq --nproc-in {threads} --nproc-out {threads} {input.bam} > {output.pairsam}"
+
+
+
+
+rule pairtools_sort:
+	input:
+		OUTDIR+"mapping/{prefix}.pairsam"
+	output:
+		temp(OUTDIR+"mapping/{prefix}_sorted.pairsam")
+	threads:THREADS
+	benchmark: OUTDIR+"benchmark/{prefix}/pairtools_sort.txt"
+        resources:
+        	tmpdir="tmp"
+	conda: "../envs/pipeline.yaml"
+	shell:
+		"pairtools sort --nproc {threads} -o {output} {input}"
+
+rule pairtools_select:
+	input:
+		pairsam=OUTDIR+"mapping/{prefix}_sorted.pairsam"
+	output:
+		selected=temp(OUTDIR+"mapping/{prefix}_filtered.pairsam"),
+		dropped=OUTDIR+"mapping/{prefix}_dropped.pairsam"
+	threads:THREADS
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/pairtools_filter.txt"
+	conda: "../envs/pipeline.yaml"
+	params:
+		filters="'(pair_type == \"UU\") or (pair_type == \"UR\") or (pair_type == \"RU\")'"
+	shell:
+		"pairtools select --nproc-in {threads} --nproc-out {threads} --output-rest {output.dropped} {params.filters} {input} > {output.selected}"
+
+rule pairtools_dedup:
+	input:
+		OUTDIR+"mapping/{prefix}_filtered.pairsam"
+	output:
+		pairsam=temp(OUTDIR+"mapping/{prefix}_dedup.pairsam"),
+		stat=OUTDIR+"mapping/{prefix}_dedup.pairstats"
+	threads:THREADS
+	conda: "../envs/pipeline.yaml"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/pairtools_dedup.txt"
+	shell:
+		"pairtools dedup --nproc-in {threads} --nproc-out {threads} --mark-dups --output-stats {output.stat} --output {output.pairsam} {input}"
+
+rule pairtools_split:
+	input:
+		OUTDIR+"mapping/{prefix}_dedup.pairsam"
+	output:
+		pairs=OUTDIR+"mapping/{prefix}_dedup.pairs",
+		bam=temp(OUTDIR+"mapping/{prefix}_dedup.bam")
+	threads:THREADS
+	conda: "../envs/pipeline.yaml"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/pairtools_split.txt"
+	shell:
+		"pairtools split --nproc-in {threads} --nproc-out {threads} --output-pairs {output.pairs} --output-sam {output.bam} {input}"
+
+rule samtools_sort:
+	input:
+		OUTDIR+"mapping/{prefix}_dedup.bam"
+	output:
+		OUTDIR+"mapping/{prefix}_sorted.bam"
+	threads:THREADS
+	conda: "../envs/pipeline.yaml"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/samtools_sort.txt"
+	shell:
+		"samtools sort -@{threads} -o {output} {input}"
+
+rule samtools_index:
+	input:
+		OUTDIR+"mapping/{prefix}_sorted.bam"
+	output:
+		OUTDIR+"mapping/{prefix}_sorted.bai"
+	threads:THREADS
+	conda: "../envs/pipeline.yaml"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/samtools_index.txt"
+	shell:
+		"samtools index -@ {threads} {input} {output}"
+
+rule juicer_hic:
+	input:
+		pairs=OUTDIR+"mapping/{prefix}_dedup.pairs",
+		chromsize=OUTDIR+"chrom.size"
+	output:
+		OUTDIR+"matrix/{prefix}.hic"
+	params:
+		juicer_tool="./juicer_tools_1.22.01.jar"
+	threads:HALF_THREADS
+	conda: "../envs/pipeline.yaml"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/juicer_hic.txt"
+	shell:
+		"java -Xmx48000m  -Djava.awt.headless=true -jar {params.juicer_tool} pre -r 1000,5000,10000,25000,50000,100000,250000,500000,1000000,2500000 --threads {threads} {input.pairs} {output} {input.chromsize}"
+
+rule bgzip:
+	input:
+		pairs=OUTDIR+"mapping/{prefix}_dedup.pairs"
+	output:
+		temp(OUTDIR+"mapping/{prefix}_dedup.pairs.gz")
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/bgzip.txt"
+	threads:THREADS
+	conda: "../envs/pipeline.yaml"
+	shell:
+		"bgzip --threads {threads} -c {input.pairs} > {output}"
+
+
+rule cooler:
+	input:
+		chromsize=OUTDIR+"chrom.size",
+		pairs=OUTDIR+"mapping/{prefix}_dedup.pairs.gz"
+	output:
+		cool=OUTDIR+"matrix/{prefix}.cool"
+	threads:HALF_THREADS
+	conda: "../envs/pipeline.yaml"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/cooler.txt"
+	shell:
+		"pairix {input.pairs} && cooler cload pairix -p {threads} {input.chromsize}:1000 {input.pairs} {output.cool}"
+rule mcooler:
+	input:
+		cool=OUTDIR+"matrix/{prefix}.cool"
+	output:
+		mcool=OUTDIR+"matrix/{prefix}.mcool"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/mcooler.txt"
+	threads:HALF_THREADS
+	conda: "../envs/pipeline.yaml"
+	shell:
+		"cooler zoomify --balance -p {threads} -r 1000,5000,10000,25000,50000,100000,250000,500000,1000000,2500000 --out {output} {input}"
+
+
