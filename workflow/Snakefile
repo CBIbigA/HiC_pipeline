@@ -13,7 +13,7 @@ R2 = "_R2"
 wildcard_constraints:
     dataset="R[12]"
 
-samples = pd.read_csv("SraRunTable.txt")
+samples = pd.read_csv("config/SraRunTable.txt")
 samples["Samples"] =  samples.Condition +"_" +samples.Cell_Line
 samples = samples.set_index("Samples", drop=False).sort_index()
 samples = samples.to_dict()
