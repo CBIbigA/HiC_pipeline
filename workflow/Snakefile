@@ -157,8 +157,8 @@ rule pairtools_split:
 	input:
 		OUTDIR+"mapping/{prefix}.dedup.pairsam"
 	output:
-		pairs=OUTDIR+"mapping/{prefix}_dedup.pairs",
-		bam=temp(OUTDIR+"mapping/{prefix}_dedup.bam")
+		pairs=OUTDIR+"mapping/{prefix}.dedup.pairs",
+		bam=temp(OUTDIR+"mapping/{prefix}.dedup.bam")
 	threads:THREADS
 	conda: "../envs/pipeline.yaml"
 	benchmark:
