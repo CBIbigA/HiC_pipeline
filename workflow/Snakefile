@@ -116,7 +116,7 @@ rule pairtools_sort:
 	input:
 		OUTDIR+"mapping/{prefix}.pairsam"
 	output:
-		temp(OUTDIR+"mapping/{prefix}_sorted.pairsam")
+		temp(OUTDIR+"mapping/{prefix}.sorted.pairsam")
 	threads:THREADS
 	benchmark: OUTDIR+"benchmark/{prefix}/pairtools_sort.txt"
         resources:
@@ -127,9 +127,9 @@ rule pairtools_sort:
 
 rule pairtools_select:
 	input:
-		pairsam=OUTDIR+"mapping/{prefix}_sorted.pairsam"
+		pairsam=OUTDIR+"mapping/{prefix}.sorted.pairsam"
 	output:
-		selected=temp(OUTDIR+"mapping/{prefix}_filtered.pairsam"),
+		selected=temp(OUTDIR+"mapping/{prefix}.filtered.pairsam"),
 		dropped=OUTDIR+"mapping/{prefix}_dropped.pairsam"
 	threads:THREADS
 	benchmark:
@@ -142,9 +142,9 @@ rule pairtools_select:
 
 rule pairtools_dedup:
 	input:
-		OUTDIR+"mapping/{prefix}_filtered.pairsam"
+		OUTDIR+"mapping/{prefix}.filtered.pairsam"
 	output:
-		pairsam=temp(OUTDIR+"mapping/{prefix}_dedup.pairsam"),
+		pairsam=temp(OUTDIR+"mapping/{prefix}.dedup.pairsam"),
 		stat=OUTDIR+"mapping/{prefix}_dedup.pairstats"
 	threads:THREADS
 	conda: "../envs/pipeline.yaml"
@@ -155,7 +155,7 @@ rule pairtools_dedup:
 
 rule pairtools_split:
 	input:
-		OUTDIR+"mapping/{prefix}_dedup.pairsam"
+		OUTDIR+"mapping/{prefix}.dedup.pairsam"
 	output:
 		pairs=OUTDIR+"mapping/{prefix}_dedup.pairs",
 		bam=temp(OUTDIR+"mapping/{prefix}_dedup.bam")
@@ -168,9 +168,9 @@ rule pairtools_split:
 
 rule samtools_sort:
 	input:
-		OUTDIR+"mapping/{prefix}_dedup.bam"
+		OUTDIR+"mapping/{prefix}.dedup.bam"
 	output:
-		OUTDIR+"mapping/{prefix}_sorted.bam"
+		OUTDIR+"mapping/{prefix}.sorted.bam"
 	threads:THREADS
 	conda: "../envs/pipeline.yaml"
 	benchmark:
@@ -180,9 +180,9 @@ rule samtools_sort:
 
 rule samtools_index:
 	input:
-		OUTDIR+"mapping/{prefix}_sorted.bam"
+		OUTDIR+"mapping/{prefix}.sorted.bam"
 	output:
-		OUTDIR+"mapping/{prefix}_sorted.bai"
+		OUTDIR+"mapping/{prefix}.sorted.bai"
 	threads:THREADS
 	conda: "../envs/pipeline.yaml"
 	benchmark:
@@ -192,7 +192,7 @@ rule samtools_index:
 
 rule juicer_hic:
 	input:
-		pairs=OUTDIR+"mapping/{prefix}_dedup.pairs",
+		pairs=OUTDIR+"mapping/{prefix}.dedup.pairs",
 		chromsize=OUTDIR+"chrom.size"
 	output:
 		OUTDIR+"matrix/{prefix}.hic"
@@ -207,9 +207,9 @@ rule juicer_hic:
 
 rule bgzip:
 	input:
-		pairs=OUTDIR+"mapping/{prefix}_dedup.pairs"
+		pairs=OUTDIR+"mapping/{prefix}.dedup.pairs"
 	output:
-		temp(OUTDIR+"mapping/{prefix}_dedup.pairs.gz")
+		temp(OUTDIR+"mapping/{prefix}.dedup.pairs.gz")
 	benchmark:
 		OUTDIR+"benchmark/{prefix}/bgzip.txt"
 	threads:THREADS
@@ -221,7 +221,7 @@ rule bgzip:
 rule cooler:
 	input:
 		chromsize=OUTDIR+"chrom.size",
-		pairs=OUTDIR+"mapping/{prefix}_dedup.pairs.gz"
+		pairs=OUTDIR+"mapping/{prefix}.dedup.pairs.gz"
 	output:
 		cool=OUTDIR+"matrix/{prefix}.cool"
 	threads:HALF_THREADS
