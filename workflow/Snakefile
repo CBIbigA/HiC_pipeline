@@ -35,10 +35,11 @@ rule sra_getfastq:
 		outdir = INDIR,
 		name = "{prefix}"
 	benchmark: OUTDIR+"/benchmarks/fastqdump/{prefix}.benchmark.txt"
+	threads:THREADS
 	conda:
 		"envs/pipeline.yaml"
 	shell:
-		"fastq-dump"
+		"fastq-dump --threads {threads}"
 		" {params.supp}"
 		" --outdir {params.outdir}"
 		" -F {params.name}"
