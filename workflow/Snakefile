@@ -98,7 +98,7 @@ rule samtools_sam_to_bam:
 rule pairtools_parse:
 	input:
 		chromsize=OUTDIR+"chrom.size",
-		bam=OUTDIR+"mapping/bwa/{prefix,\w}.bam"
+		bam=OUTDIR+"mapping/bwa/{prefix,'\w'}.bam"
 	output:
 		pairsam=temp(OUTDIR+"mapping/pairtools/{prefix}.pairsam"),
 		stats=OUTDIR+"mapping/pairtools/{prefix}.pairsamstats"
