@@ -26,18 +26,22 @@ rule all:
 		expand(OUTDIR+"mapping/pairtools/{prefix}.sorted.bai",prefix=samples["Run"].keys())
 
 
-rule get_fastq_pe_gz:
-    output:
-        # the wildcard name must be accession, pointing to an SRA number
-        INDIR+"/SRR/{accession}_1.fastq.gz",
-        INDIR+"/SRR/{accession}_2.fastq.gz",
-    log:
-        OUTDIR+"logs/pe/{accession}.gz.log"
-    params:
-        extra="--skip-technical"
-    threads: THREADS  # defaults to 6
-    wrapper:
-        "v1.2.0/bio/sra-tools/fasterq-dump"
+rule sra_getfastq:
+	output:
+		"RAW/SRR/{prefix}_1.fastq.gz"
+		"RAW/SRR/{prefix}_2.fastq.gz"
+	params:
+		supp = "--gzip --split-files",
+		outdir = "RAW/SRR",
+		name = "{prefix}"
+	benchmark: OUTDIR+"/benchmarks/fastqdump/{prefix}.benchmark.txt"
+	conda:
+		"envs/sra-tools.yaml"
+	shell:
+		"fastq-dump"
+		" {params.supp}"
+		" --outdir {params.outdir}"
+		" -F {params.name}"
 
 def getSRRFiles(wildcards):
 	return([INDIR+"/SRR/"+f+SAMPLEEXT for f in samples[wildcards.sample]])
