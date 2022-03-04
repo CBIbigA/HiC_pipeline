@@ -44,17 +44,17 @@ rule sra_getfastq:
 		" -F {params.name}"
 
 def getSRRFiles(wildcards):
-	return([INDIR+"/SRR/"+f+SAMPLEEXT for f in samples[wildcards.sample]])
+	return([INDIR+"/SRR/"+f+"_"+wildcards.sample+".fastq.gz" for f in samples[wildcards.sample]])
 
 
 rule merge_and_rename_fastq:
 	output:
-		INDIR+"{sample}.fastq.gz"
+		INDIR+"{sample}_{dataset}.fastq.gz"
 	input:
 		getSRRFiles
 	params:
-		nogz = "RAW/{sample}"+".fastq"
-	benchmark: OUTDIR+"/benchmarks/mergefastq/{sample}.benchmark.txt"
+		nogz = "RAW/{sample}_{dataset}"+".fastq"
+	benchmark: OUTDIR+"/benchmarks/mergefastq/{sample}_{dataset}.benchmark.txt"
 	shell:
 		"zcat {input} > {params.nogz} && gzip {params.nogz}"
 
