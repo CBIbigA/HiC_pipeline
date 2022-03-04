@@ -59,7 +59,7 @@ rule makeChromSize:
 
 
 def getFastQ(wildcards):
-	fastq_list = expand(INDIR+"{sample}{dataset}.fastq.gz",dataset=wildcards.dataset,sample = wildcards.prefix)
+	fastq_list = expand(INDIR+"{sample}{dataset}.fastq.gz",dataset=[R1,R2],sample = wildcards.prefix)
 	return fastq_list
 
 rule bwa_mem:
