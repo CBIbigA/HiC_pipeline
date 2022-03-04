@@ -91,7 +91,7 @@ rule samtools_sam_to_bam:
 
 
 def getBamList(wildcards):
-	bam_list = expand(OUTDIR+"mapping/srr/{sample}.bam",prefix = samples["Run"][wildcards.prefix])
+	bam_list = expand(OUTDIR+"mapping/srr/{sample}.bam",sample = samples["Run"][wildcards.prefix])
 	return bam_list
 
 rule merge_technical_replicates:
