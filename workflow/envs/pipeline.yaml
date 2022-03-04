@@ -10,4 +10,5 @@ dependencies:
   - pairtools=0.3.0
   - bwa==0.7.17
   - java-jdk
-
+  - parallel-fastq-dump
+  - sra-tools
