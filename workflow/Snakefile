@@ -34,15 +34,15 @@ rule sra_getfastq:
 		supp = "--gzip --split-files",
 		outdir = INDIR,
 		name = "{prefix}"
-	benchmark: OUTDIR+"/benchmarks/fastqdump/{prefix}.benchmark.txt"
+	benchmark: OUTDIR+"benchmarks/fastqdump/{prefix}.benchmark.txt"
 	threads:THREADS
 	conda:
 		"envs/pipeline.yaml"
 	shell:
-		"fastq-dump --threads {threads}"
+		"parallel-fastq-dump --threads {threads}"
 		" {params.supp}"
 		" --outdir {params.outdir}"
-		" -F {params.name}"
+		" --sra-id {params.name}"
 
 
 
