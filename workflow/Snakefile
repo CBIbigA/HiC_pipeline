@@ -11,7 +11,8 @@ R1 = "_1"
 R2 = "_2"
 
 wildcard_constraints:
-    dataset="R[12]"
+    dataset="R[12]",
+    prefix="\w"
 
 samples = pd.read_csv("config/SraRunTable.txt")
 samples["Samples"] =  samples.Condition +"_" +samples.Cell_Line
@@ -98,7 +99,7 @@ rule samtools_sam_to_bam:
 rule pairtools_parse:
 	input:
 		chromsize=OUTDIR+"chrom.size",
-		bam=OUTDIR+"mapping/bwa/{prefix,'\w'}.bam"
+		bam=OUTDIR+"mapping/bwa/{prefix}.bam"
 	output:
 		pairsam=temp(OUTDIR+"mapping/pairtools/{prefix}.pairsam"),
 		stats=OUTDIR+"mapping/pairtools/{prefix}.pairsamstats"
