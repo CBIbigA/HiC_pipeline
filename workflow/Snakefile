@@ -28,11 +28,11 @@ rule all:
 
 rule sra_getfastq:
 	output:
-		INDIR+"SRR/{prefix}_1.fastq.gz",
-		INDIR+"SRR/{prefix}_2.fastq.gz"
+		INDIR+"{prefix}_1.fastq.gz",
+		INDIR+"{prefix}_2.fastq.gz"
 	params:
 		supp = "--gzip --split-files",
-		outdir = INDIR+"SRR",
+		outdir = INDIR,
 		name = "{prefix}"
 	benchmark: OUTDIR+"/benchmarks/fastqdump/{prefix}.benchmark.txt"
 	conda:
@@ -58,12 +58,15 @@ rule makeChromSize:
 		"samtools faidx {input.fasta} -o {output.fai} && cut -f1,2 {output.fai} > {output.chromsize}"
 
 
+def getFastQ(wildcards):
+	fastq_list = expand(INDIR+"{sample}{dataset}.fastq.gz",dataset=wildcards.dataset,sample = wildcards.prefix)
+	return fastq_list
+
 rule bwa_mem:
 	input:
-		fastq1=INDIR+"{prefix}"+R1+".fastq.gz",
-		fastq2=INDIR+"{prefix}"+R2+".fastq.gz"
+		getFastQ
 	output:
-		mapped=temp(OUTDIR+"mapping/bwa/{prefix}.sam")
+		mapped=temp(OUTDIR+"mapping/srr/{prefix}.sam")
 	params:
 		index=GENOME+".fa"
 	benchmark:
@@ -76,15 +79,30 @@ rule bwa_mem:
 
 rule samtools_sam_to_bam:
 	input:
-		OUTDIR+"mapping/bwa/{prefix}.sam"
+		OUTDIR+"mapping/srr/{prefix}.sam"
 	output:
-		OUTDIR+"mapping/bwa/{prefix}.bam"
+		OUTDIR+"mapping/srr/{prefix}.bam"
 	benchmark:
 		OUTDIR+"benchmark/{prefix}/samtools_sam_to_bam.txt"
 	threads:THREADS
 	conda: "envs/pipeline.yaml"
 	shell:
 		"samtools view -@ {threads} -Shb {input} > {output}"
+
+
+def getBamList(wildcards):
+	bam_list = expand(OUTDIR+"mapping/srr/{sample}.bam",prefix = samples["Run"][wildcards.prefix])
+	return bam_list
+
+rule merge_technical_replicates:
+	input: getBamList
+	output: OUTDIR+"mapping/bwa/{prefix}.bam"
+	threads:THREADS
+	conda: "envs/pipeline.yaml"
+	benchmark:
+		OUTDIR+"benchmark/{prefix}/merge_technical_replicates.txt"
+	shell:
+		"samtools merge -@ {threads} -o {output} {input}"
 
 
 rule pairtools_parse:
