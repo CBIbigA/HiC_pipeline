@@ -21,8 +21,8 @@ samples = samples.to_dict()
 
 rule all:
 	input:
-		expand(OUTDIR+"matrix/{prefix}.{type}",prefix=samples["Run"].keys(),type=["mcool","hic"]),
-		expand(OUTDIR+"mapping/{prefix}.sorted.bai",prefix=samples["Run"].keys())
+		expand(OUTDIR+"mapping/matrix/{prefix}.{type}",prefix=samples["Run"].keys(),type=["mcool","hic"]),
+		expand(OUTDIR+"mapping/pairtools/{prefix}.sorted.bai",prefix=samples["Run"].keys())
 
 
 rule get_fastq_pe_gz:
