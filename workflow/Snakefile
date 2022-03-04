@@ -28,7 +28,7 @@ rule all:
 
 rule sra_getfastq:
 	output:
-		INDIR+"SRR/{prefix}_1.fastq.gz"
+		INDIR+"SRR/{prefix}_1.fastq.gz",
 		INDIR+"/SRR/{prefix}_2.fastq.gz"
 	params:
 		supp = "--gzip --split-files",
