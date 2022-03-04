@@ -4,7 +4,7 @@ OUTDIR="OUT/"
 INDIR="fastq/"
 INDEX_GENOME="/home/vadmin/genome/female.hg19"
 GENOME=INDEX_GENOME+"/female.hg19"
-THREADS=24
+THREADS=48
 HALF_THREADS=int(math.ceil(THREADS/2))
 
 R1 = "_1"
@@ -29,8 +29,8 @@ rule all:
 rule get_fastq_pe_gz:
     output:
         # the wildcard name must be accession, pointing to an SRA number
-        INDIR+"{accession}_1.fastq.gz",
-        INDIR+"{accession}_2.fastq.gz",
+        INDIR+"/SRR/{accession}_1.fastq.gz",
+        INDIR+"/SRR/{accession}_2.fastq.gz",
     log:
         OUTDIR+"logs/pe/{accession}.gz.log"
     params:
@@ -40,7 +40,7 @@ rule get_fastq_pe_gz:
         "v1.2.0/bio/sra-tools/fasterq-dump"
 
 def getSRRFiles(wildcards):
-	return([INDIR+f+SAMPLEEXT for f in samples[wildcards.sample]])
+	return([INDIR+"/SRR/"+f+SAMPLEEXT for f in samples[wildcards.sample]])
 
 
 rule merge_and_rename_fastq:
