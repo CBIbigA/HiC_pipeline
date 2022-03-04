@@ -28,11 +28,11 @@ rule all:
 
 rule sra_getfastq:
 	output:
-		"RAW/SRR/{prefix}_1.fastq.gz"
-		"RAW/SRR/{prefix}_2.fastq.gz"
+		INDIR+"SRR/{prefix}_1.fastq.gz"
+		INDIR+"/SRR/{prefix}_2.fastq.gz"
 	params:
 		supp = "--gzip --split-files",
-		outdir = "RAW/SRR",
+		outdir = INDIR+"SRR",
 		name = "{prefix}"
 	benchmark: OUTDIR+"/benchmarks/fastqdump/{prefix}.benchmark.txt"
 	conda:
@@ -53,7 +53,7 @@ rule merge_and_rename_fastq:
 	input:
 		getSRRFiles
 	params:
-		nogz = "RAW/{sample}_{dataset}"+".fastq"
+		nogz = INDIR+"{sample}_{dataset}"+".fastq"
 	benchmark: OUTDIR+"/benchmarks/mergefastq/{sample}_{dataset}.benchmark.txt"
 	shell:
 		"zcat {input} > {params.nogz} && gzip {params.nogz}"
