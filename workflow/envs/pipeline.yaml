@@ -1,0 +1,13 @@
+name: HiC_full
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7
+  - cooler=0.8.11
+  - samtools==1.14
+  - pairtools=0.3.0
+  - bwa==0.7.17
+  - java-jdk
+
