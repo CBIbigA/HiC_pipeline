@@ -208,7 +208,7 @@ rule juicer_hic:
 	output:
 		OUTDIR+"mapping/matrix/{prefix}.hic"
 	params:
-		juicer_tool="./juicer_tools_1.22.01.jar"
+		juicer_tool="scripts/juicer_tools_1.22.01.jar"
 	threads:HALF_THREADS
 	conda: "envs/pipeline.yaml"
 	benchmark:
