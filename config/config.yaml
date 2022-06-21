@@ -7,6 +7,7 @@ general:
     aln: 128
     pairtools: 128
     matrix: 128
+  rm_duplicates: true
 genome:
   dir: "/home/vadmin/genome/female.hg19"
   name: "female.hg19"
