@@ -1,0 +1,26 @@
+general:
+  samplein: "fastq/"
+  sampleout: "OUT/"
+  samples:
+    - "CH85_S7"
+  threads:
+    aln: 128
+    pairtools: 128
+    matrix: 128
+genome:
+  dir: "/home/vadmin/genome/female.hg19"
+  name: "female.hg19"
+  ext: ".fa"
+raw_spec:
+  ext: ".fastq.gz"
+  pairs_expr: "R[12]"
+  pairs_ext: 
+    - "_R1"
+    - "_R2"
+juicer:
+  juicertools: "scripts/juicer_tools_1.22.01.jar"
+  resolutions: "2500000,1000000,500000,250000,100000,50000,25000,10000,5000,1000"
+cooler:
+  minres: "1000"
+  resolutions: "2500000,1000000,500000,250000,100000,50000,25000,10000,5000,1000"
+  options: "--balance"
