@@ -2,7 +2,23 @@ general:
   samplein: "fastq/"
   sampleout: "OUT/"
   samples:
-    - "CH85_S7"
+    - "fused_DIvA_R1"
+    - "fused_OHT_R1"
+    - "H2VKFBGXJ_HiC_D_OHTPARPi_21s001168-1-1_Clouaire_lane121s001168_R1"
+    - "H2VYVBGXJ_HiC_D_DIvA_21s001142-1-1_Clouaire_lane121s001142_R1"
+    - "H2WW7BGXJ_HiC_D_OHT_21s001143-1-1_Clouaire_lane121s001143_R1"
+    - "H5KTGBGXC_HiC-manipB_DIvA_19s003262-1-1_Clouaire_lane119s003262_R1"
+    - "H75VVBGXC_HiC-manipB_OHT_19s003263-1-1_Clouaire_lane119s003263_R1"
+    - "HMFGCBGXJ_HIC_siCTRL_DIVA_21s002804-1-1_Clouaire_lane121s002804_R1"
+    - "HMFJFBGXJ_HIC_siSETX_OHT_21s002807-1-1_Clouaire_lane1sample1_R1"
+    - "HMGCYBGXJ_HIC_siSETX_DIVA_21s002806-1-1_Clouaire_lane1HICsiSETXDIVA_R1"
+    - "HMGGGBGXJ_HIC_siCTRL_OHT_21s002805-1-1_Clouaire_lane1HICsiCTRLOHT_R1"
+    - "HMJ2KBGXJ_HIC_siFTO_DIVA_21s002808-1-1_Clouaire_lane121s002808_R1"
+    - "HMJ2LBGXJ_HIC_siFTO_OHT_21s002809-1-1_Clouaire_lane121s002809_R1"
+    - "HTGLNBGXB_HiC-manipA_DIvA_19s003260-1-1_Clouaire_lane119s003260_R1"
+    - "HTGTMBGXB_HiC-manipA_OHT_19s003261-1-1_Clouaire_lane119s003261_R1"
+    - "HYJT7BGXH_HiC_D_OHTATMi_21s001167-1-1_Clouaire_lane121s001167_R1"
+    - "HYJTGBGXH_HiC_D_OHTDNAPKi_21s001166-1-1_Clouaire_lane121s001166_R1"
   threads:
     aln: 128
     pairtools: 128
@@ -13,7 +29,7 @@ genome:
   name: "female.hg19"
   ext: ".fa"
 raw_spec:
-  ext: ".fastq.gz"
+  ext: ""
   pairs_expr: "R[12]"
   pairs_ext: 
     - "_R1"

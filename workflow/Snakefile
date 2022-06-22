@@ -95,10 +95,10 @@ rule pairtools_sort:
 		OUTDIR+"mapping/pairtools/{prefix}.pairsam"
 	output:
 		temp(OUTDIR+"mapping/pairtools/{prefix}.sorted.pairsam")
-	threads:THREADS
+	threads:config["general"]["threads"]["pairtools"]
 	benchmark: OUTDIR+"benchmark/{prefix}/pairtools_sort.txt"
-		resources:
-			tmpdir="tmp"
+	resources:
+		tmpdir="tmp"
 	conda: "envs/pipeline.yaml"
 	shell:
 		"pairtools sort --nproc {threads} -o {output} {input}"
@@ -173,7 +173,7 @@ rule samtools_index:
 	threads:config["general"]["threads"]["pairtools"]
 	conda: "envs/pipeline.yaml"
 	benchmark:
-		OUTDIR+"benchmark/{prefix}/samtools_index.txt"
+		OUTDIR+"benchmark/{prefix}/samtools_index.{type}.txt"
 	shell:
 		"samtools index -@ {threads} {input} {output}"
 
@@ -228,7 +228,7 @@ rule cooler:
 	threads:config["general"]["threads"]["matrix"]
 	conda: "envs/pipeline.yaml"
 	params:
-	minres=config["cooler"]["minres"]
+		minres=config["cooler"]["minres"]
 	benchmark:
 		OUTDIR+"benchmark/{prefix}/cooler.{type}.txt"
 	shell:
