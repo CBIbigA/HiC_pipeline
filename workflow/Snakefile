@@ -8,7 +8,7 @@ SAMPLES = config["general"]["samples"]
 INDIR=config["general"]["samplein"]
 OUTDIR=config["general"]["sampleout"]
 
-GENOME=config["genome"]["dir"]+config["genome"]["name"]+config["genome"]["ext"]
+GENOME=config["genome"]["dir"]+config["genome"]["name"]
 EXT=config["raw_spec"]["ext"]
 R1=config["raw_spec"]["pairs_ext"][0]
 R2=config["raw_spec"]["pairs_ext"][1]
@@ -16,20 +16,24 @@ R2=config["raw_spec"]["pairs_ext"][1]
 
 
 
+if config["general"]["rm_duplicates"]:
+	outpair="dedup"
+else:
+	outpair="filtered"
+
 
 wildcard_constraints:
-	dataset=config["raw_spec"]["pairs_expr"],
-	prefix="\w+"
+	dataset=config["raw_spec"]["pairs_expr"]
 
 
 rule all:
 	input:
-		expand(OUTDIR+"mapping/matrix/{prefix}.{dedup}.{type}",prefix=SAMPLES,type=["mcool",".hic"],dedup=["dedup"])
+		expand(OUTDIR+"mapping/matrix/{prefix}."+outpair+".{type}",prefix=SAMPLES,type=["mcool","hic"])
 
 
 rule makeChromSize:
 	input:
-		fasta=GENOME+".fa"
+		fasta=GENOME+config["genome"]["ext"]
 	output:
 		chromsize=OUTDIR+"chrom.size",
 		fai=GENOME+".fa.fai"
@@ -41,7 +45,7 @@ rule makeChromSize:
 
 
 def getFastQ(wildcards):
-	fastq_list = expand(INDIR+"{sample}_{dataset}{ext}",dataset=[R1,R2],sample = wildcards.prefix,ext=EXT)
+	fastq_list = expand(INDIR+"{sample}{dataset}{ext}",dataset=[R1,R2],sample = wildcards.prefix,ext=EXT)
 	return fastq_list
 
 rule bwa_mem:
@@ -110,12 +114,12 @@ rule pairtools_select:
 		selected=temp(OUTDIR+"mapping/pairtools/{prefix}.filtered.pairsam"),
 		dropped=OUTDIR+"mapping/pairtools/{prefix}_dropped.pairsam"
 	threads:config["general"]["threads"]["pairtools"]
-	params:threads=int(math.ceil(config["general"]["threads"]["pairtools"]/2))
+	params:
+		threads=int(math.ceil(config["general"]["threads"]["pairtools"]/2)),
+		filters="'(pair_type == \"UU\") or (pair_type == \"UR\") or (pair_type == \"RU\")'"
 	benchmark:
 		OUTDIR+"benchmark/{prefix}/pairtools_filter.txt"
 	conda: "envs/pipeline.yaml"
-	params:
-		filters="'(pair_type == \"UU\") or (pair_type == \"UR\") or (pair_type == \"RU\")'"
 	shell:
 		"pairtools select --nproc-in {params.threads} --nproc-out {params.threads} --output-rest {output.dropped} {params.filters} {input} > {output.selected}"
 
@@ -134,73 +138,69 @@ rule pairtools_dedup:
 		"pairtools dedup --nproc-in {params.threads} --nproc-out {params.threads} --mark-dups --output-stats {output.stat} --output {output.pairsam} {input}"
 
 
-if config["general"]["rm_duplicates"]:
-	outpair="dedup"
-else:
-	outpair="filtered"
-
 rule pairtools_split:
 	input:
-		OUTDIR+"mapping/pairtools/{prefix}.{type}.pairsam"
+		OUTDIR+"mapping/pairtools/{prefix}."+outpair+".pairsam"
 	output:
-		pairs=OUTDIR+"mapping/pairtools/{prefix}.{type}.pairs",
-		bam=temp(OUTDIR+"mapping/pairtools/{prefix}.{type}.bam")
+		pairs=OUTDIR+"mapping/pairtools/{prefix}."+outpair+".pairs",
+		bam=temp(OUTDIR+"mapping/pairtools/{prefix}."+outpair+".bam")
 	threads:config["general"]["threads"]["pairtools"]
 	params:threads=int(math.ceil(config["general"]["threads"]["pairtools"]/2))
 	conda: "envs/pipeline.yaml"
 	benchmark:
-		OUTDIR+"benchmark/{prefix}/pairtools_split_{type}.txt"
+		OUTDIR+"benchmark/{prefix}/pairtools_split.txt"
 	shell:
 		"pairtools split --nproc-in {params.threads} --nproc-out {params.threads} --output-pairs {output.pairs} --output-sam {output.bam} {input}"
 
 rule samtools_sort:
 	input:
-		OUTDIR+"mapping/pairtools/{prefix}.{type}.bam"
+		OUTDIR+"mapping/pairtools/{prefix}."+outpair+".bam"
 	output:
-		OUTDIR+"mapping/pairtools/{prefix}.{type}_sorted.bam"
+		OUTDIR+"mapping/pairtools/{prefix}."+outpair+"_sorted.bam"
 	threads:config["general"]["threads"]["pairtools"]
 	conda: "envs/pipeline.yaml"
 	benchmark:
-		OUTDIR+"benchmark/{prefix}/samtools.{type}_sort.txt"
+		OUTDIR+"benchmark/{prefix}/samtools."+outpair+"_sort.txt"
 	shell:
 		"samtools sort -@{threads} -o {output} {input}"
 
 rule samtools_index:
 	input:
-		OUTDIR+"mapping/pairtools/{prefix}.{type}_sorted.bam"
+		OUTDIR+"mapping/pairtools/{prefix}."+outpair+"_sorted.bam"
 	output:
-		OUTDIR+"mapping/pairtools/{prefix}.{type}_sorted.bai"
+		OUTDIR+"mapping/pairtools/{prefix}."+outpair+"_sorted.bai"
 	threads:config["general"]["threads"]["pairtools"]
 	conda: "envs/pipeline.yaml"
 	benchmark:
-		OUTDIR+"benchmark/{prefix}/samtools_index.{type}.txt"
+		OUTDIR+"benchmark/{prefix}/samtools_index."+outpair+".txt"
 	shell:
 		"samtools index -@ {threads} {input} {output}"
 
 rule juicer_hic:
 	input:
-		pairs=OUTDIR+"mapping/pairtools/{prefix}.{type}.pairs",
+		pairs=OUTDIR+"mapping/pairtools/{prefix}."+outpair+".pairs",
 		chromsize=OUTDIR+"chrom.size"
 	output:
-		OUTDIR+"mapping/matrix/{prefix}.{type}.hic"
+		OUTDIR+"mapping/matrix/{prefix}."+outpair+".hic"
 	params:
-		juicer_tool="workflow/scripts/juicer_tools_1.22.01.jar"
+		juicer_tool="workflow/scripts/juicer_tools_1.22.01.jar",
+		resolutions=config["juicer"]["resolutions"]
 	resources:
 		mem_mb=lambda wildcards, threads: 3584 * threads
 	threads:config["general"]["threads"]["matrix"]
 	conda: "envs/pipeline.yaml"
 	benchmark:
-		OUTDIR+"benchmark/{prefix}/juicer_hic.{type}.txt"
+		OUTDIR+"benchmark/{prefix}/juicer_hic."+outpair+".txt"
 	shell:
-		"java -Djava.awt.headless=true -Ddevelopment=false -Xmx{ressources.mem_mb}M -jar {params.juicer_tool} pre -r {params.resstr} -k {params.norm} --threads {threads} {input.pairs} {output} {input.chromsize}"
+		"java -Djava.awt.headless=true -Ddevelopment=false -Xmx{resources.mem_mb}M -jar {params.juicer_tool} pre -r {params.resolutions} -k {params.norm} --threads {threads} {input.pairs} {output} {input.chromsize}"
 
 rule bgzip:
 	input:
-		pairs=OUTDIR+"mapping/pairtools/{prefix}.{type}.pairs"
+		pairs=OUTDIR+"mapping/pairtools/{prefix}."+outpair+".pairs"
 	output:
-		temp(OUTDIR+"mapping/pairtools/{prefix}.{type}.pairs.gz")
+		temp(OUTDIR+"mapping/pairtools/{prefix}."+outpair+".pairs.gz")
 	benchmark:
-		OUTDIR+"benchmark/{prefix}/bgzip.{type}.txt"
+		OUTDIR+"benchmark/{prefix}/bgzip."+outpair+".txt"
 	threads:config["general"]["threads"]["matrix"]
 	conda: "envs/pipeline.yaml"
 	shell:
@@ -208,40 +208,40 @@ rule bgzip:
 
 rule pairix:
 	input:
-		pairs=OUTDIR+"mapping/pairtools/{prefix}.{type}.pairs.gz"
+		pairs=OUTDIR+"mapping/pairtools/{prefix}."+outpair+".pairs.gz"
 	output:
-		OUTDIR+"mapping/pairtools/{prefix}.{type}.pairs.gz.px2"
+		OUTDIR+"mapping/pairtools/{prefix}."+outpair+".pairs.gz.px2"
 	threads:config["general"]["threads"]["matrix"]
 	conda: "envs/pipeline.yaml"
 	benchmark:
-		OUTDIR+"benchmark/{prefix}/pairix.{type}.txt"
+		OUTDIR+"benchmark/{prefix}/pairix."+outpair+".txt"
 	shell:
 		"pairix {input.pairs}"
 
 rule cooler:
 	input:
 		chromsize=OUTDIR+"chrom.size",
-		pairix=OUTDIR+"mapping/pairtools/{prefix}.{type}.pairs.gz.px2",
-		pairs=OUTDIR+"mapping/pairtools/{prefix}.{type}.pairs.gz"
+		pairix=OUTDIR+"mapping/pairtools/{prefix}."+outpair+".pairs.gz.px2",
+		pairs=OUTDIR+"mapping/pairtools/{prefix}."+outpair+".pairs.gz"
 	output:
-		cool=OUTDIR+"mapping/matrix/{prefix}.{type}.cool"
+		cool=OUTDIR+"mapping/matrix/{prefix}."+outpair+".cool"
 	threads:config["general"]["threads"]["matrix"]
 	conda: "envs/pipeline.yaml"
 	params:
 		minres=config["cooler"]["minres"]
 	benchmark:
-		OUTDIR+"benchmark/{prefix}/cooler.{type}.txt"
+		OUTDIR+"benchmark/{prefix}/cooler."+outpair+".txt"
 	shell:
 		"cooler cload pairix -p {threads} {input.chromsize}:{params.minres} {input.pairs} {output.cool}"
 
 
 rule mcooler:
 	input:
-		cool=OUTDIR+"mapping/matrix/{prefix}.{type}.cool"
+		cool=OUTDIR+"mapping/matrix/{prefix}."+outpair+".cool"
 	output:
-		mcool=OUTDIR+"mapping/matrix/{prefix}.{type}.mcool"
+		mcool=OUTDIR+"mapping/matrix/{prefix}."+outpair+".mcool"
 	benchmark:
-		OUTDIR+"benchmark/{prefix}/mcooler.{type}.txt"
+		OUTDIR+"benchmark/{prefix}/mcooler."+outpair+".txt"
 	threads:config["general"]["threads"]["matrix"]
 	params:
 		resolutions=config["cooler"]["resolutions"],
