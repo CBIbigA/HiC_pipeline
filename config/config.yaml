@@ -2,14 +2,30 @@ general:
   samplein: "fastq/"
   sampleout: "OUT/"
   samples:
-    - "CH85_S7"
+    - "fused_DIvA"
+    - "fused_OHT"
+    - "H2VKFBGXJ_HiC_D_OHTPARPi_21s001168-1-1_Clouaire_lane121s001168"
+    - "H2VYVBGXJ_HiC_D_DIvA_21s001142-1-1_Clouaire_lane121s001142"
+    - "H2WW7BGXJ_HiC_D_OHT_21s001143-1-1_Clouaire_lane121s001143"
+    - "H5KTGBGXC_HiC-manipB_DIvA_19s003262-1-1_Clouaire_lane119s003262"
+    - "H75VVBGXC_HiC-manipB_OHT_19s003263-1-1_Clouaire_lane119s003263"
+    - "HMFGCBGXJ_HIC_siCTRL_DIVA_21s002804-1-1_Clouaire_lane121s002804"
+    - "HMFJFBGXJ_HIC_siSETX_OHT_21s002807-1-1_Clouaire_lane1sample1"
+    - "HMGCYBGXJ_HIC_siSETX_DIVA_21s002806-1-1_Clouaire_lane1HICsiSETXDIVA"
+    - "HMGGGBGXJ_HIC_siCTRL_OHT_21s002805-1-1_Clouaire_lane1HICsiCTRLOHT"
+    - "HMJ2KBGXJ_HIC_siFTO_DIVA_21s002808-1-1_Clouaire_lane121s002808"
+    - "HMJ2LBGXJ_HIC_siFTO_OHT_21s002809-1-1_Clouaire_lane121s002809"
+    - "HTGLNBGXB_HiC-manipA_DIvA_19s003260-1-1_Clouaire_lane119s003260"
+    - "HTGTMBGXB_HiC-manipA_OHT_19s003261-1-1_Clouaire_lane119s003261"
+    - "HYJT7BGXH_HiC_D_OHTATMi_21s001167-1-1_Clouaire_lane121s001167"
+    - "HYJTGBGXH_HiC_D_OHTDNAPKi_21s001166-1-1_Clouaire_lane121s001166"
   threads:
-    aln: 128
-    pairtools: 128
-    matrix: 128
+    aln: 64
+    pairtools: 64
+    matrix: 64
   rm_duplicates: true
 genome:
-  dir: "/home/vadmin/genome/female.hg19"
+  dir: "/home/vadmin/genome/female.hg19/"
   name: "female.hg19"
   ext: ".fa"
 raw_spec:
@@ -21,7 +37,9 @@ raw_spec:
 juicer:
   juicertools: "scripts/juicer_tools_1.22.01.jar"
   resolutions: "2500000,1000000,500000,250000,100000,50000,25000,10000,5000,1000"
+  norm: "VC,VC_SQRT,KR,SCALE"
 cooler:
   minres: "1000"
   resolutions: "2500000,1000000,500000,250000,100000,50000,25000,10000,5000,1000"
   options: "--balance"
+
