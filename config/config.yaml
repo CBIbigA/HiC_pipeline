@@ -21,7 +21,7 @@ general:
     - "AAANCTTHV_HIC_siCTRL94_OHT_22s003296-1-1_Clouaire_lane1HICsiPER2OHT"
     - "AAANFH7HV_HIC_siCTRL94_DIVA_22s003294-1-1_Clouaire_lane1HICsiCTRL94DIVA"
     - "AAANFH7HV_HIC_siCTRL94_DIVA_22s003294-1-1_Clouaire_lane1HICsiPER2DIVA"
-  threads:
+ threads:
     aln: 64
     pairtools: 12
     matrix: 12
@@ -34,11 +34,11 @@ raw_spec:
   ext: ".fastq.gz"
   pairs_expr: "R[12]"
   pairs_ext: 
-    - "_R1"
+    - "_R2"
     - "_R2"
 juicer:
   juicertools: "scripts/juicer_tools_1.22.01.jar"
-  resolutions: "2500000,1000000,500000,250000,100000,50000,25000,10000,5000,1000"
+  resolutions: "2500000,1000000,500000,250000,100000,50000,25000,10000,5000,1000",
   norm: "VC,VC_SQRT,KR,SCALE"
 cooler:
   minres: "1000"
