@@ -2,8 +2,6 @@ general:
   samplein: "fastq/"
   sampleout: "OUT/"
   samples:
-    - "fused_DIvA"
-    - "fused_OHT"
     - "H2VKFBGXJ_HiC_D_OHTPARPi_21s001168-1-1_Clouaire_lane121s001168"
     - "H2VYVBGXJ_HiC_D_DIvA_21s001142-1-1_Clouaire_lane121s001142"
     - "H2WW7BGXJ_HiC_D_OHT_21s001143-1-1_Clouaire_lane121s001143"
@@ -19,10 +17,14 @@ general:
     - "HTGTMBGXB_HiC-manipA_OHT_19s003261-1-1_Clouaire_lane119s003261"
     - "HYJT7BGXH_HiC_D_OHTATMi_21s001167-1-1_Clouaire_lane121s001167"
     - "HYJTGBGXH_HiC_D_OHTDNAPKi_21s001166-1-1_Clouaire_lane121s001166"
+    - "AAANCTTHV_HIC_siCTRL94_OHT_22s003296-1-1_Clouaire_lane1HICsiCTRL94OHT"
+    - "AAANCTTHV_HIC_siCTRL94_OHT_22s003296-1-1_Clouaire_lane1HICsiPER2OHT"
+    - "AAANFH7HV_HIC_siCTRL94_DIVA_22s003294-1-1_Clouaire_lane1HICsiCTRL94DIVA"
+    - "AAANFH7HV_HIC_siCTRL94_DIVA_22s003294-1-1_Clouaire_lane1HICsiPER2DIVA"
   threads:
     aln: 64
-    pairtools: 64
-    matrix: 64
+    pairtools: 12
+    matrix: 12
   rm_duplicates: true
 genome:
   dir: "/home/vadmin/genome/female.hg19/"

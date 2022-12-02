@@ -1,3 +1,5 @@
+
+
 import math
 import pandas as pd
 
@@ -107,13 +109,12 @@ rule pairtools_sort:
 	shell:
 		"pairtools sort --nproc {threads} -o {output} {input}"
 
-
 rule pairtools_select:
 	input:
 		pairsam=OUTDIR+"mapping/pairtools/{prefix}.sorted.pairsam"
 	output:
 		selected=temp(OUTDIR+"mapping/pairtools/{prefix}.filtered.pairsam"),
-		dropped=temp(OUTDIR+"mapping/pairtools/{prefix}_dropped.pairsam")
+		dropped=OUTDIR+"mapping/pairtools/{prefix}_dropped.pairsam"
 	threads:config["general"]["threads"]["pairtools"]
 	params:
 		threads=int(math.ceil(config["general"]["threads"]["pairtools"]/2)),
@@ -129,7 +130,7 @@ rule pairtools_dedup:
 		OUTDIR+"mapping/pairtools/{prefix}.filtered.pairsam"
 	output:
 		pairsam=temp(OUTDIR+"mapping/pairtools/{prefix}.dedup.pairsam"),
-		stat=temp(OUTDIR+"mapping/pairtools/{prefix}_dedup.pairstats")
+		stat=OUTDIR+"mapping/pairtools/{prefix}_dedup.pairstats"
 	threads:config["general"]["threads"]["pairtools"]
 	params:threads=int(math.ceil(config["general"]["threads"]["pairtools"]/2))
 	conda: "envs/pipeline.yaml"
@@ -185,8 +186,8 @@ rule juicer_hic:
 		OUTDIR+"mapping/matrix/{prefix}."+outpair+".hic"
 	params:
 		juicer_tool="workflow/scripts/juicer_tools_1.22.01.jar",
-		resolutions=config["juicer"]["resolutions"],
-		norm=config["juicer"]["norm"]
+		norm="VC,VC_SQRT,KR,SCALE",
+		resolutions=config["juicer"]["resolutions"]
 	resources:
 		mem_mb=lambda wildcards, threads: 3584 * threads
 	threads:config["general"]["threads"]["matrix"]
@@ -245,12 +246,8 @@ rule mcooler:
 	benchmark:
 		OUTDIR+"benchmark/{prefix}/mcooler."+outpair+".txt"
 	threads:config["general"]["threads"]["matrix"]
-	conda: "envs/pipeline.yaml"
 	params:
 		resolutions=config["cooler"]["resolutions"],
 		options=config["cooler"]["options"]
 	shell:
 		"cooler zoomify {params.options} -p {threads} -r {params.resolutions} {input}"
-
-
-
