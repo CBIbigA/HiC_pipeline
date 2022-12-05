@@ -246,6 +246,7 @@ rule mcooler:
 	benchmark:
 		OUTDIR+"benchmark/{prefix}/mcooler."+outpair+".txt"
 	threads:config["general"]["threads"]["matrix"]
+	conda: "envs/pipeline.yaml"
 	params:
 		resolutions=config["cooler"]["resolutions"],
 		options=config["cooler"]["options"]
